@@ -18,7 +18,8 @@
                 throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} must be > 0");
 
             var queue = new ConcurrentQueue<(int index, IEnumerable<TValue> data)>(sourceValues.Chunk(batchSize));
-            var result = new ConcurrentBag<(int index, IEnumerable<TResult> data)>();
+            var context = new SynchronizationContext();
+            var result = new ResultList<TResult>(context);
             var threads = new List<Thread>(maxDegreeOfParallelism);
             for (var i = 0; i < maxDegreeOfParallelism; i++)
             {
@@ -26,7 +27,8 @@
                 {
                     while (queue.TryDequeue(out var source))
                     {
-                        result.Add((source.index, getBatchResultFunc(source.data.ToArray())));
+                        result.AddRange(getBatchResultFunc(source.data.ToArray()));
+                        context.DataEvent.Set();
                     }
                 });
                 thread.Start();
@@ -38,7 +40,8 @@
                 thread.Join();
             }
 
-            return result.OrderBy(x => x.index).SelectMany(x => x.data);
+            context.ProcessingFinished = true;
+            return result;
         }
     }
 }
