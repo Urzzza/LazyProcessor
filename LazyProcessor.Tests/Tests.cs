@@ -17,7 +17,7 @@ namespace LazyProcessor.Tests
         [DataRow(28)]
         [DataRow(100)]
         [DataRow(999)]
-        [DataRow(300000)]
+        [DataRow(100000)]
         public void TestOk(int count)
         {
             var sourceData = Enumerable.Range(0, count);
@@ -26,7 +26,7 @@ namespace LazyProcessor.Tests
                 sourceData,
                 this.ProcessFunc,
                 500,
-                20);
+                4);
             Console.WriteLine($"Result returned: {sw.Elapsed.TotalSeconds}");
             CollectionAssert.AreEquivalent(sourceData.ToList(), result.ToList());
             Console.WriteLine($"Total Time: {sw.Elapsed.TotalSeconds}");

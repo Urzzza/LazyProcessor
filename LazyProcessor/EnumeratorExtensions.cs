@@ -4,11 +4,9 @@ namespace LazyProcessor
 {
     public static class EnumeratorExtensions
     {
-        private static object _lock = new object();
-
         public static T[] GetNextBatch<T>(this IEnumerator<T> enumerator, int count)
         {
-            lock (_lock)
+            lock (enumerator)
             {
                 var result = new List<T>(count);
                 var taken = 0;

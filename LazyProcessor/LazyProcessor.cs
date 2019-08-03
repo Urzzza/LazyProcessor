@@ -31,8 +31,9 @@
                         initialData = enumerator.GetNextBatch(batchSize);
                     }
 
-                    result.FinalizeResult();
+                    result.RemoveWorker();
                 });
+                result.AddWorker();
                 thread.Start();
             }
             
