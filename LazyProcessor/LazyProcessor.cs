@@ -1,9 +1,7 @@
 ﻿namespace LazyProcessor
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
 
     public class LazyProcessor
@@ -17,30 +15,27 @@
             if (maxDegreeOfParallelism <= 0)
                 throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} must be > 0");
 
-            var queue = new ConcurrentQueue<(int index, IEnumerable<TValue> data)>(sourceValues.Chunk(batchSize));
-            var context = new SynchronizationContext();
-            var result = new ResultList<TResult>(context);
-            var threads = new List<Thread>(maxDegreeOfParallelism);
+            var enumerator = sourceValues.GetEnumerator();
+            var result = new LazyResult<TResult>();
             for (var i = 0; i < maxDegreeOfParallelism; i++)
             {
+                var initialData = enumerator.GetNextBatch(batchSize);
+                if (initialData.Length == 0)
+                    break;
+
                 var thread = new Thread(() =>
                 {
-                    while (queue.TryDequeue(out var source))
+                    while (initialData.Length > 0)
                     {
-                        result.AddRange(getBatchResultFunc(source.data.ToArray()));
-                        context.DataEvent.Set();
+                        result.AddRange(getBatchResultFunc(initialData));
+                        initialData = enumerator.GetNextBatch(batchSize);
                     }
+
+                    result.FinalizeResult();
                 });
                 thread.Start();
-                threads.Add(thread);
             }
-
-            foreach (var thread in threads)
-            {
-                thread.Join();
-            }
-
-            context.ProcessingFinished = true;
+            
             return result;
         }
     }
