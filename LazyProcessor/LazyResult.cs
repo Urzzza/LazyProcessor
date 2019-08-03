@@ -9,12 +9,19 @@ namespace LazyProcessor
     public class LazyResult<T> : IEnumerable<T>, IEnumerator<T>
     {
         private readonly object _lock = new object();
+        public readonly int Capacity;
         private readonly ConcurrentQueue<T> ResultQueue = new ConcurrentQueue<T>();
         public readonly ManualResetEvent DataEvent = new ManualResetEvent(false);
+        public readonly ManualResetEvent CapacityEvent = new ManualResetEvent(true);
         private int CurrentWorkersCount;
         private T Value;
 
         private bool ProcessingFinished => CurrentWorkersCount == 0;
+
+        public LazyResult(int capacity)
+        {
+            Capacity = capacity;
+        }
 
         public IEnumerator<T> GetEnumerator() => this;
 
@@ -29,6 +36,7 @@ namespace LazyProcessor
                 {
                     if (ResultQueue.TryDequeue(out Value))
                     {
+                        CapacityEvent.Set();
                         return true;
                     }
 
@@ -45,11 +53,30 @@ namespace LazyProcessor
         
         public void AddRange(IEnumerable<T> newData)
         {
-            foreach (var item in newData)
+            var enumerator = newData.GetEnumerator();
+            while (true)
             {
-                ResultQueue.Enqueue(item);
+                if (ResultQueue.Count >= Capacity)
+                {
+                    CapacityEvent.Reset();
+                    CapacityEvent.WaitOne();
+                    continue;
+                }
+
+                if (!enumerator.MoveNext())
+                    break;
+
+                ResultQueue.Enqueue(enumerator.Current);
                 DataEvent.Set();
             }
+//            foreach (var item in newData)
+//            {
+//                
+//
+//                CapacityEvent.WaitOne();
+//                ResultQueue.Enqueue(item);
+//                DataEvent.Set();
+//            }
         }
 
         public void Reset() {}

@@ -18,7 +18,7 @@
                 throw new ArgumentException($"{nameof(batchSize)} must be > 0");
 
             var enumerator = sourceValues.GetEnumerator();
-            var result = new LazyResult<TResult>();
+            var result = new LazyResult<TResult>(batchSize + maxDegreeOfParallelism);
             for (var i = 0; i < maxDegreeOfParallelism; i++)
             {
                 var initialData = enumerator.GetNextBatch(batchSize);
