@@ -14,6 +14,8 @@
         {
             if (maxDegreeOfParallelism <= 0)
                 throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} must be > 0");
+            if (batchSize <= 0)
+                throw new ArgumentException($"{nameof(batchSize)} must be > 0");
 
             var enumerator = sourceValues.GetEnumerator();
             var result = new LazyResult<TResult>();

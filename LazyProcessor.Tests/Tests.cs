@@ -17,7 +17,7 @@ namespace LazyProcessor.Tests
         [DataRow(28)]
         [DataRow(100)]
         [DataRow(999)]
-        [DataRow(100000)]
+        [DataRow(1000000)]
         public void TestOk(int count)
         {
             var sourceData = Enumerable.Range(0, count);

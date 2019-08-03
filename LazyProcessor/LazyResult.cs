@@ -11,10 +11,11 @@ namespace LazyProcessor
         private readonly object _lock = new object();
         private readonly ConcurrentQueue<T> ResultQueue = new ConcurrentQueue<T>();
         public readonly ManualResetEvent DataEvent = new ManualResetEvent(false);
-        private bool ProcessingFinished => CurrentWorkersCount == 0;
         private int CurrentWorkersCount;
         private T Value;
-        
+
+        private bool ProcessingFinished => CurrentWorkersCount == 0;
+
         public IEnumerator<T> GetEnumerator() => this;
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -39,6 +40,7 @@ namespace LazyProcessor
         }
 
         public void AddWorker() => Interlocked.Increment(ref CurrentWorkersCount);
+
         public void RemoveWorker() => Interlocked.Decrement(ref CurrentWorkersCount);
         
         public void AddRange(IEnumerable<T> newData)
