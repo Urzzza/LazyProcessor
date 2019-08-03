@@ -10,7 +10,7 @@
 
         static void Main(string[] args)
         {
-            var count = 15;
+            var count = 300000;
             var sourceData = Enumerable.Range(0, count);
             var sw = Stopwatch.StartNew();
             var result = lazyProcessor.ProcessInBatches(
@@ -19,7 +19,8 @@
                 9,
                 10);
             Console.WriteLine($"Time: {sw.Elapsed.TotalSeconds}");
-            Console.WriteLine(string.Join("|", result));
+            var rr =result.ToList();
+            Console.WriteLine($"Time: {sw.Elapsed.TotalSeconds}");
             Console.ReadKey();
         }
 

@@ -1,9 +1,7 @@
 ﻿namespace LazyProcessor
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
 
     public class LazyProcessor
@@ -16,29 +14,32 @@
         {
             if (maxDegreeOfParallelism <= 0)
                 throw new ArgumentException($"{nameof(maxDegreeOfParallelism)} must be > 0");
+            if (batchSize <= 0)
+                throw new ArgumentException($"{nameof(batchSize)} must be > 0");
 
-            var queue = new ConcurrentQueue<(int index, IEnumerable<TValue> data)>(sourceValues.Chunk(batchSize));
-            var result = new ConcurrentBag<(int index, IEnumerable<TResult> data)>();
-            var threads = new List<Thread>(maxDegreeOfParallelism);
+            var enumerator = sourceValues.GetEnumerator();
+            var result = new LazyResult<TResult>();
             for (var i = 0; i < maxDegreeOfParallelism; i++)
             {
+                var initialData = enumerator.GetNextBatch(batchSize);
+                if (initialData.Length == 0)
+                    break;
+
                 var thread = new Thread(() =>
                 {
-                    while (queue.TryDequeue(out var source))
+                    while (initialData.Length > 0)
                     {
-                        result.Add((source.index, getBatchResultFunc(source.data.ToArray())));
+                        result.AddRange(getBatchResultFunc(initialData));
+                        initialData = enumerator.GetNextBatch(batchSize);
                     }
+
+                    result.RemoveWorker();
                 });
+                result.AddWorker();
                 thread.Start();
-                threads.Add(thread);
             }
-
-            foreach (var thread in threads)
-            {
-                thread.Join();
-            }
-
-            return result.OrderBy(x => x.index).SelectMany(x => x.data);
+            
+            return result;
         }
     }
 }
