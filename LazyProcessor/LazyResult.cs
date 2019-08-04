@@ -47,9 +47,9 @@ namespace LazyProcessor
             return false;
         }
 
-        public void AddWorker() => Interlocked.Increment(ref CurrentWorkersCount);
+        public void IncreaseWorkerCount() => Interlocked.Increment(ref CurrentWorkersCount);
 
-        public void RemoveWorker() => Interlocked.Decrement(ref CurrentWorkersCount);
+        public void DecreaseWorkerCount() => Interlocked.Decrement(ref CurrentWorkersCount);
         
         public void AddRange(IEnumerable<T> newData)
         {
@@ -69,14 +69,6 @@ namespace LazyProcessor
                 ResultQueue.Enqueue(enumerator.Current);
                 DataEvent.Set();
             }
-//            foreach (var item in newData)
-//            {
-//                
-//
-//                CapacityEvent.WaitOne();
-//                ResultQueue.Enqueue(item);
-//                DataEvent.Set();
-//            }
         }
 
         public void Reset() {}
